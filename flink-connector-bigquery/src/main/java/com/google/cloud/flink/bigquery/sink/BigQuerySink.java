@@ -16,32 +16,28 @@
 
 package com.google.cloud.flink.bigquery.sink;
 
-import org.apache.flink.api.connector.sink2.Sink;
-
 import com.google.cloud.bigquery.storage.v1.ProtoSchema;
 import com.google.cloud.flink.bigquery.common.config.BigQueryConnectOptions;
 import com.google.cloud.flink.bigquery.sink.serializer.BigQueryProtoSerializer;
+import org.apache.flink.api.connector.sink2.Sink;
+import org.apache.flink.connector.base.DeliveryGuarantee;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/** Base class for developing a BigQuery sink. */
-abstract class BaseSink implements Sink {
+/** Class wrapping BigQuery sinks with appropriate configurations. */
+public class BigQuerySink {
 
-    final BigQueryConnectOptions connectOptions;
-    final ProtoSchema protoSchema;
-    final BigQueryProtoSerializer serializer;
-    final String tablePath;
+    private static final Logger LOG = LoggerFactory.getLogger(BigQuerySink.class);
 
-    BaseSink(
+    public static Sink addSink(
             BigQueryConnectOptions connectOptions,
+            DeliveryGuarantee deliveryGuarantee,
             ProtoSchema protoSchema,
             BigQueryProtoSerializer serializer) {
-        this.connectOptions = connectOptions;
-        this.protoSchema = protoSchema;
-        this.serializer = serializer;
-        this.tablePath =
-                String.format(
-                        "projects/%s/datasets/%s/tables/%s",
-                        connectOptions.getProjectId(),
-                        connectOptions.getDataset(),
-                        connectOptions.getTable());
+        if (deliveryGuarantee == DeliveryGuarantee.EXACTLY_ONCE) {
+            LOG.error("Exactly once consistency guarantee is not supported in BigQuery sink");
+            throw new UnsupportedOperationException("Exactly once guarantee not supported");
+        }
+        return new DefaultSink(connectOptions, protoSchema, serializer);
     }
 }

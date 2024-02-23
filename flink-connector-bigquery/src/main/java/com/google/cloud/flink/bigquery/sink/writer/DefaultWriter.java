@@ -16,9 +16,18 @@
 
 package com.google.cloud.flink.bigquery.sink.writer;
 
-import org.apache.flink.api.connector.sink2.SinkWriter;
+import com.google.api.core.ApiFuture;
+import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
+import com.google.cloud.bigquery.storage.v1.ProtoSchema;
+import com.google.cloud.flink.bigquery.common.config.BigQueryConnectOptions;
+import com.google.cloud.flink.bigquery.sink.exceptions.BigQuerySerializationException;
+import com.google.cloud.flink.bigquery.sink.serializer.BigQueryProtoSerializer;
+import com.google.protobuf.ByteString;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Writer implementation for {@link DefaultSink}.
@@ -34,20 +43,61 @@ import java.io.IOException;
  *
  * @param <IN> Type of records to be written to BigQuery.
  */
-public class DefaultWriter<IN> implements SinkWriter<IN> {
+public class DefaultWriter<IN> extends BaseWriter<IN> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultWriter.class);
+
+    public DefaultWriter(
+            BigQueryConnectOptions connectOptions,
+            ProtoSchema protoSchema,
+            BigQueryProtoSerializer serializer,
+            String tablePath) {
+        super(connectOptions, protoSchema, serializer);
+        streamName = String.format("%s/streams/_default", tablePath);
+        streamWriter = createStreamWriter();
+    }
 
     @Override
     public void write(IN element, Context context) throws IOException, InterruptedException {
-        throw new UnsupportedOperationException("write method is not supported");
+        try {
+            ByteString protoRow = getProtoRow(element);
+            if (!fitsInAppendRequest(protoRow)) {
+                validateAppendResponses(false);
+                append();
+            }
+            addToAppendRequest(protoRow);
+        } catch (BigQuerySerializationException e) {
+            LOG.error(String.format("Unable to serialize record {%s}. Dropping it!", element), e);
+        }
     }
 
     @Override
-    public void flush(boolean endOfInput) throws IOException, InterruptedException {
-        throw new UnsupportedOperationException("flush method is not supported");
+    void sendAppendRequest() {
+        ApiFuture responseFuture = streamWriter.append(protoRowsBuilder.build());
+        appendResponseFuturesQueue.add(responseFuture);
     }
 
     @Override
-    public void close() {
-        throw new UnsupportedOperationException("close method is not supported");
+    void validateAppendResponses(boolean waitForResponse) {
+        ApiFuture<AppendRowsResponse> appendResponseFuture;
+        while ((appendResponseFuture = appendResponseFuturesQueue.peek()) != null) {
+            if (waitForResponse || appendResponseFuture.isDone()) {
+                appendResponseFuturesQueue.poll();
+                boolean succeeded = false;
+                try {
+                  AppendRowsResponse response = appendResponseFuture.get();
+                  // If we got here, the response was successful.
+                  succeeded = true;
+                }
+                catch (ExecutionException e) {}
+                catch (InterruptedException e) {}
+                finally {}
+            }
+            else {
+                break;
+            }
+        }
     }
+    
+
 }
