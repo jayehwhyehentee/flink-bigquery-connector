@@ -389,7 +389,13 @@ public class BigQueryIntegrationTest {
                             .deliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                             .build();
         } else {
-            throw new IllegalArgumentException("EXACTLY ONCE is not supported yet ");
+            sinkConfig =
+                    BigQuerySinkConfig.newBuilder()
+                            .connectOptions(sinkConnectOptions)
+                            .schemaProvider(destSchemaProvider)
+                            .serializer(new AvroToProtoSerializer())
+                            .deliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
+                            .build();
         }
 
         DataStreamSink boundedStreamSink =
@@ -465,7 +471,13 @@ public class BigQueryIntegrationTest {
                             .deliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                             .build();
         } else {
-            throw new IllegalArgumentException("EXACTLY ONCE is not supported yet ");
+            sinkConfig =
+                    BigQuerySinkConfig.newBuilder()
+                            .connectOptions(sinkConnectOptions)
+                            .schemaProvider(destSchemaProvider)
+                            .serializer(new AvroToProtoSerializer())
+                            .deliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
+                            .build();
         }
 
         runJobWithSink(
