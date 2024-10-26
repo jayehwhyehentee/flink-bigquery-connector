@@ -53,8 +53,10 @@ public class BigQueryDynamicTableSink implements DynamicTableSink {
             LogicalType logicalType,
             Integer parallelism) {
         this.logicalType = logicalType;
+        // TODO
+        // Collect tableAutoCreate flag
         this.sinkConfig =
-                BigQuerySinkConfig.forTable(connectOptions, deliveryGuarantee, logicalType);
+                BigQuerySinkConfig.forTable(connectOptions, deliveryGuarantee, logicalType, false);
         this.parallelism = parallelism;
     }
 

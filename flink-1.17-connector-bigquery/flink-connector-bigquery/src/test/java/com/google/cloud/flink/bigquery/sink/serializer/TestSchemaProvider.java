@@ -43,7 +43,13 @@ public class TestSchemaProvider implements BigQuerySchemaProvider {
         return this.descriptor;
     }
 
+    @Override
     public Schema getAvroSchema() {
         return this.schema;
+    }
+
+    @Override
+    public boolean schemaUnknown() {
+        return false;
     }
 }

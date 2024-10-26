@@ -18,6 +18,7 @@ package com.google.cloud.flink.bigquery.sink.serializer;
 
 import com.google.cloud.flink.bigquery.sink.exceptions.BigQuerySerializationException;
 import com.google.protobuf.ByteString;
+import org.apache.avro.Schema;
 
 /** Mock serializer for Sink unit tests. */
 public class FakeBigQuerySerializer extends BigQueryProtoSerializer {
@@ -53,6 +54,11 @@ public class FakeBigQuerySerializer extends BigQueryProtoSerializer {
             throw new BigQuerySerializationException("Fake error for testing");
         }
         return serializeResult;
+    }
+
+    @Override
+    public Schema getAvroSchema(Object record) {
+        return null;
     }
 
     @Override

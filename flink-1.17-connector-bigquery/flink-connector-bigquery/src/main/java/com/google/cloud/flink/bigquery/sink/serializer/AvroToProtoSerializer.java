@@ -94,6 +94,11 @@ public class AvroToProtoSerializer extends BigQueryProtoSerializer<GenericRecord
         }
     }
 
+    @Override
+    public Schema getAvroSchema(GenericRecord record) {
+        return record.getSchema();
+    }
+
     /**
      * Function to convert a Generic Avro Record to Dynamic Message to write using the Storage Write
      * API.

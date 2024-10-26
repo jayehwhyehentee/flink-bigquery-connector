@@ -148,11 +148,9 @@ public class BigQueryBufferedWriter<IN> extends BaseWriter<IN>
     @Override
     public void write(IN element, Context context) {
         if (isFirstWriteAfterCheckpoint) {
-            preWriteOpsAfterCommit();
+            resetMetrics();
         }
-        totalRecordsSeen++;
-        numberOfRecordsSeenByWriter.inc();
-        numberOfRecordsSeenByWriterSinceCheckpoint.inc();
+        super.write(element, context);
         try {
             ByteString protoRow = getProtoRow(element);
             if (!fitsInAppendRequest(protoRow)) {
@@ -166,8 +164,11 @@ public class BigQueryBufferedWriter<IN> extends BaseWriter<IN>
         }
     }
 
-    /** This is the method called just after checkpoint is complete, and the next writing begins. */
-    private void preWriteOpsAfterCommit() {
+    /**
+     * This is the method called just after checkpoint is complete, and before the next writing
+     * begins.
+     */
+    private void resetMetrics() {
         // Change the flag until the next checkpoint.
         isFirstWriteAfterCheckpoint = false;
         // Update the number of records written to BigQuery since the checkpoint just completed.
@@ -267,9 +268,9 @@ public class BigQueryBufferedWriter<IN> extends BaseWriter<IN>
     public List<BigQueryWriterState> snapshotState(long checkpointId) {
         logger.info("Snapshotting state in subtask {} for checkpoint {}", subtaskId, checkpointId);
         // Since we are moving towards checkpointing and write() for previous checkpoint is
-        // completed,
-        // reset the flag isFirstWriteAfterCheckpoint
+        // completed, reset the flag isFirstWriteAfterCheckpoint and metric counters
         isFirstWriteAfterCheckpoint = true;
+        // Snapshot writer state
         streamNameInState = streamName;
         streamOffsetInState = streamOffset;
         return Collections.singletonList(

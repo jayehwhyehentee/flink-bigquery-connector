@@ -66,6 +66,11 @@ abstract class BigQueryBaseSink<IN> implements Sink<IN> {
         if (sinkConfig.getSchemaProvider() == null) {
             throw new IllegalArgumentException("BigQuery schema provider cannot be null");
         }
+        // Destination table does not exist and connector cannot create new table.
+        if (sinkConfig.getSchemaProvider().schemaUnknown() && !sinkConfig.enableTableAutoCreate()) {
+            logger.error("TODO");
+            throw new IllegalStateException("TODO");
+        }
     }
 
     /** Ensures Sink's parallelism does not exceed the allowed maximum when scaling Flink job. */
