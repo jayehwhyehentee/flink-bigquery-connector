@@ -2,6 +2,7 @@ package com.google.cloud.flink.bigquery.common.utils;
 
 import com.google.api.services.bigquery.model.TableSchema;
 import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 
 import java.util.Optional;
@@ -32,5 +33,25 @@ public class BigQueryTableInfo {
                                         String.format(
                                                 "The provided table %s.%s.%s does not exists.",
                                                 project, dataset, table)));
+    }
+
+    /**
+     * Function to identify if a BigQuery table exists.
+     *
+     * @param client {@link BigQuery} Object containing the BigQuery Client.
+     * @param dataset Dataset ID containing the Table.
+     * @param tableName Table Name.
+     * @return Boolean {@code TRUE} if the table exists or {@code FALSE} if it does not.
+     */
+    public static Boolean tableExists(BigQuery client, String dataset, String tableName) {
+        try {
+            Table table = client.getTable(TableId.of(dataset, tableName));
+            return (table != null && table.exists());
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "The provided table %s.%s not found. %s",
+                            dataset, tableName, e.toString()));
+        }
     }
 }

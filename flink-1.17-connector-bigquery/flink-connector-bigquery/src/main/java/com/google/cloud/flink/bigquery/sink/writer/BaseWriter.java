@@ -82,7 +82,6 @@ abstract class BaseWriter<IN> implements SinkWriter<IN> {
     // TODO
     private final boolean enableTableAutoCreate = false;
     private final BigQueryConnectOptions connectOptions;
-    private final ProtoSchema protoSchema;
     private final BigQueryProtoSerializer serializer;
     private final ProtoRows.Builder protoRowsBuilder;
 
@@ -112,7 +111,6 @@ abstract class BaseWriter<IN> implements SinkWriter<IN> {
         this.subtaskId = subtaskId;
         this.tablePath = tablePath;
         this.connectOptions = connectOptions;
-        this.protoSchema = getProtoSchema(schemaProvider);
         this.schemaProvider = schemaProvider;
         this.serializer = serializer;
         appendRequestSizeBytes = 0L;
@@ -167,11 +165,10 @@ abstract class BaseWriter<IN> implements SinkWriter<IN> {
         }
         if (enableTableAutoCreate) {
             Schema avroSchema = serializer.getAvroSchema(record);
-            // Try to create new table in BigQuery.
-            createTable();
             // Initialize serializer now that schema is known.
             BigQuerySchemaProvider schemaProvider = new BigQuerySchemaProviderImpl(avroSchema);
             serializer.init(schemaProvider);
+            return;
         }
         // Ideally, we should never reach here.
         // Earlier validations in sink config, sink and writer constructors should prevent this
@@ -219,7 +216,8 @@ abstract class BaseWriter<IN> implements SinkWriter<IN> {
                     streamName,
                     subtaskId);
             streamWriter =
-                    writeClient.createStreamWriter(streamName, protoSchema, enableConnectionPool);
+                    writeClient.createStreamWriter(
+                            streamName, getProtoSchema(schemaProvider), enableConnectionPool);
         } catch (IOException e) {
             logger.error(
                     String.format(

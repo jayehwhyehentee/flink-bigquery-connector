@@ -207,8 +207,9 @@ public class BigQueryUtils {
     }
 
     public static boolean tableExists(BigQueryConnectOptions connectOptions) {
-        // TODO
-        return false;
+        BigQueryServices.QueryDataClient queryDataClient =
+                BigQueryServicesFactory.instance(connectOptions).queryClient();
+        return queryDataClient.tableExists(connectOptions.getDataset(), connectOptions.getTable());
     }
 
     public static void createTable(BigQueryConnectOptions connectOptions, Schema schema) {
