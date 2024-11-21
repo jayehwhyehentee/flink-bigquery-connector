@@ -25,7 +25,9 @@ import com.google.api.client.util.Preconditions;
 import com.google.api.services.bigquery.model.TableSchema;
 import com.google.cloud.flink.bigquery.common.config.BigQueryConnectOptions;
 import com.google.cloud.flink.bigquery.common.config.CredentialsOptions;
+import com.google.cloud.flink.bigquery.common.utils.SchemaTransform;
 import com.google.cloud.flink.bigquery.services.BigQueryServices;
+import com.google.cloud.flink.bigquery.services.BigQueryUtils;
 import com.google.cloud.flink.bigquery.table.config.BigQueryTableConfig;
 import org.apache.avro.Schema;
 
@@ -86,10 +88,10 @@ public class BigQueryTableSchemaProvider {
         // Translate to connect Options
         BigQueryConnectOptions connectOptions = getConnectOptionsFromTableConfig(tableConfig);
         // Obtain the desired BigQuery Table Schema
-        TableSchema bigQueryTableSchema =
-                BigQuerySchemaProviderImpl.getTableSchemaFromOptions(connectOptions);
+        TableSchema bigQueryTableSchema = BigQueryUtils.getTableSchema(connectOptions);
         // Obtain Avro Schema
-        Schema avroSchema = BigQuerySchemaProviderImpl.getAvroSchema(bigQueryTableSchema);
+        Schema avroSchema =
+                SchemaTransform.toGenericAvroSchema("root", bigQueryTableSchema.getFields());
         // Convert to Table API Schema
         org.apache.flink.table.api.Schema tableApiSchema =
                 getTableApiSchemaFromAvroSchema(avroSchema);

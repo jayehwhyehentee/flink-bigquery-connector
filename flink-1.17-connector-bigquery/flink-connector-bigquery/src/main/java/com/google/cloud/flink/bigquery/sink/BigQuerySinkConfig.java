@@ -53,6 +53,7 @@ public class BigQuerySinkConfig {
     private final DeliveryGuarantee deliveryGuarantee;
     private final BigQuerySchemaProvider schemaProvider;
     private final BigQueryProtoSerializer serializer;
+    private final boolean enableTableAutoCreate;
 
     public static Builder newBuilder() {
         return new Builder();
@@ -78,7 +79,8 @@ public class BigQuerySinkConfig {
         BigQuerySinkConfig object = (BigQuerySinkConfig) obj;
         if (this.getConnectOptions() == object.getConnectOptions()
                 && (this.getSerializer().getClass() == object.getSerializer().getClass())
-                && (this.getDeliveryGuarantee() == object.getDeliveryGuarantee())) {
+                && (this.getDeliveryGuarantee() == object.getDeliveryGuarantee())
+                && (this.enableTableAutoCreate() == object.enableTableAutoCreate())) {
             BigQuerySchemaProvider thisSchemaProvider = this.getSchemaProvider();
             BigQuerySchemaProvider objSchemaProvider = object.getSchemaProvider();
             return thisSchemaProvider.getAvroSchema().equals(objSchemaProvider.getAvroSchema());
@@ -90,11 +92,13 @@ public class BigQuerySinkConfig {
             BigQueryConnectOptions connectOptions,
             DeliveryGuarantee deliveryGuarantee,
             BigQuerySchemaProvider schemaProvider,
-            BigQueryProtoSerializer serializer) {
+            BigQueryProtoSerializer serializer,
+            boolean enableTableAutoCreate) {
         this.connectOptions = connectOptions;
         this.deliveryGuarantee = deliveryGuarantee;
         this.schemaProvider = schemaProvider;
         this.serializer = serializer;
+        this.enableTableAutoCreate = enableTableAutoCreate;
     }
 
     public BigQueryConnectOptions getConnectOptions() {
@@ -113,6 +117,10 @@ public class BigQuerySinkConfig {
         return schemaProvider;
     }
 
+    public boolean enableTableAutoCreate() {
+        return enableTableAutoCreate;
+    }
+
     /** Builder for BigQuerySinkConfig. */
     public static class Builder {
 
@@ -121,6 +129,7 @@ public class BigQuerySinkConfig {
         private BigQuerySchemaProvider schemaProvider;
         private BigQueryProtoSerializer serializer;
         private StreamExecutionEnvironment env;
+        private boolean enableTableAutoCreate;
 
         public Builder connectOptions(BigQueryConnectOptions connectOptions) {
             this.connectOptions = connectOptions;
@@ -142,6 +151,11 @@ public class BigQuerySinkConfig {
             return this;
         }
 
+        public Builder enableTableAutoCreate(boolean enableTableAutoCreate) {
+            this.enableTableAutoCreate = enableTableAutoCreate;
+            return this;
+        }
+
         public Builder streamExecutionEnvironment(
                 StreamExecutionEnvironment streamExecutionEnvironment) {
             this.env = streamExecutionEnvironment;
@@ -153,7 +167,11 @@ public class BigQuerySinkConfig {
                 validateStreamExecutionEnvironment(env);
             }
             return new BigQuerySinkConfig(
-                    connectOptions, deliveryGuarantee, schemaProvider, serializer);
+                    connectOptions,
+                    deliveryGuarantee,
+                    schemaProvider,
+                    serializer,
+                    enableTableAutoCreate);
         }
     }
 
@@ -164,13 +182,15 @@ public class BigQuerySinkConfig {
     public static BigQuerySinkConfig forTable(
             BigQueryConnectOptions connectOptions,
             DeliveryGuarantee deliveryGuarantee,
-            LogicalType logicalType) {
+            LogicalType logicalType,
+            boolean enableTableAutoCreate) {
         return new BigQuerySinkConfig(
                 connectOptions,
                 deliveryGuarantee,
                 new BigQuerySchemaProviderImpl(
                         BigQueryTableSchemaProvider.getAvroSchemaFromLogicalSchema(logicalType)),
-                new RowDataToProtoSerializer());
+                new RowDataToProtoSerializer(),
+                enableTableAutoCreate);
     }
 
     public static void validateStreamExecutionEnvironment(StreamExecutionEnvironment env) {

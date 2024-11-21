@@ -30,7 +30,10 @@ import com.google.api.services.bigquery.model.JobConfiguration;
 import com.google.api.services.bigquery.model.JobConfigurationQuery;
 import com.google.api.services.bigquery.model.JobReference;
 import com.google.api.services.bigquery.model.Table;
+import com.google.api.services.bigquery.model.TableSchema;
 import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.cloud.bigquery.Schema;
+import com.google.cloud.flink.bigquery.common.config.BigQueryConnectOptions;
 import com.google.cloud.flink.bigquery.common.config.CredentialsOptions;
 import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
@@ -186,5 +189,29 @@ public class BigQueryUtils {
                                 .get(projectId, datasetId, tableId)
                                 .setPrettyPrint(false)
                                 .execute());
+    }
+
+    /**
+     * Function to derive TableSchema from Connection Options for a Bigquery Table.
+     *
+     * @param connectOptions {@link BigQueryConnectOptions}
+     * @return {@link TableSchema} obtained for the table.
+     */
+    public static TableSchema getTableSchema(BigQueryConnectOptions connectOptions) {
+        BigQueryServices.QueryDataClient queryDataClient =
+                BigQueryServicesFactory.instance(connectOptions).queryClient();
+        return queryDataClient.getTableSchema(
+                connectOptions.getProjectId(),
+                connectOptions.getDataset(),
+                connectOptions.getTable());
+    }
+
+    public static boolean tableExists(BigQueryConnectOptions connectOptions) {
+        // TODO
+        return false;
+    }
+
+    public static void createTable(BigQueryConnectOptions connectOptions, Schema schema) {
+        // TODO
     }
 }

@@ -31,12 +31,15 @@ import com.google.cloud.bigquery.storage.v1.WriteStream;
 import com.google.cloud.flink.bigquery.common.config.BigQueryConnectOptions;
 import com.google.cloud.flink.bigquery.services.BigQueryServices;
 import com.google.cloud.flink.bigquery.services.BigQueryServicesFactory;
+import com.google.cloud.flink.bigquery.services.BigQueryUtils;
 import com.google.cloud.flink.bigquery.sink.exceptions.BigQueryConnectorException;
 import com.google.cloud.flink.bigquery.sink.exceptions.BigQuerySerializationException;
 import com.google.cloud.flink.bigquery.sink.serializer.BigQueryProtoSerializer;
 import com.google.cloud.flink.bigquery.sink.serializer.BigQuerySchemaProvider;
+import com.google.cloud.flink.bigquery.sink.serializer.BigQuerySchemaProviderImpl;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
+import org.apache.avro.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,8 +76,11 @@ abstract class BaseWriter<IN> implements SinkWriter<IN> {
 
     // Number of bytes to be sent in the next append request.
     private long appendRequestSizeBytes;
+    private BigQuerySchemaProvider schemaProvider;
     protected final int subtaskId;
     private final String tablePath;
+    // TODO
+    private final boolean enableTableAutoCreate = false;
     private final BigQueryConnectOptions connectOptions;
     private final ProtoSchema protoSchema;
     private final BigQueryProtoSerializer serializer;
@@ -107,11 +113,19 @@ abstract class BaseWriter<IN> implements SinkWriter<IN> {
         this.tablePath = tablePath;
         this.connectOptions = connectOptions;
         this.protoSchema = getProtoSchema(schemaProvider);
+        this.schemaProvider = schemaProvider;
         this.serializer = serializer;
-        this.serializer.init(schemaProvider);
         appendRequestSizeBytes = 0L;
         appendResponseFuturesQueue = new LinkedList<>();
         protoRowsBuilder = ProtoRows.newBuilder();
+    }
+
+    @Override
+    public void write(IN element, Context context) {
+        init(element);
+        totalRecordsSeen++;
+        numberOfRecordsSeenByWriter.inc();
+        numberOfRecordsSeenByWriterSinceCheckpoint.inc();
     }
 
     /** Append pending records and validate all remaining append responses. */
@@ -142,6 +156,31 @@ abstract class BaseWriter<IN> implements SinkWriter<IN> {
         }
     }
 
+    void init(IN record) {
+        // Should be invoked before the writer processes any records.
+        if (totalRecordsSeen != 0) {
+            return;
+        }
+        if (!this.schemaProvider.schemaUnknown()) {
+            serializer.init(schemaProvider);
+            return;
+        }
+        if (enableTableAutoCreate) {
+            Schema avroSchema = serializer.getAvroSchema(record);
+            // Try to create new table in BigQuery.
+            createTable();
+            // Initialize serializer now that schema is known.
+            BigQuerySchemaProvider schemaProvider = new BigQuerySchemaProviderImpl(avroSchema);
+            serializer.init(schemaProvider);
+        }
+        // Ideally, we should never reach here.
+        // Earlier validations in sink config, sink and writer constructors should prevent this
+        // state.
+        logger.error("TODO");
+        throw new IllegalStateException(
+                "(Elaborate) Destination schema not known, and new table cannot be created");
+    }
+
     /** Invoke BigQuery storage API for appending data to a table. */
     abstract void sendAppendRequest(ProtoRows protoRows);
 
@@ -156,6 +195,14 @@ abstract class BaseWriter<IN> implements SinkWriter<IN> {
 
     /** Send append request to BigQuery storage and prepare for next append request. */
     void append() {
+        // Before sending data to BigQuery, check if new table needs to be created.
+        if (totalRecordsWritten == 0
+                && enableTableAutoCreate
+                && !BigQueryUtils.tableExists(connectOptions)) {
+            // TODO
+            // send relevant data to createTable method
+            createTable();
+        }
         sendAppendRequest(protoRowsBuilder.build());
         protoRowsBuilder.clear();
         appendRequestSizeBytes = 0L;
@@ -275,6 +322,12 @@ abstract class BaseWriter<IN> implements SinkWriter<IN> {
                 sinkWriterMetricGroup.counter("numberOfRecordsWrittenToBigQuery");
         numberOfRecordsSeenByWriterSinceCheckpoint =
                 sinkWriterMetricGroup.counter("numberOfRecordsSeenByWriterSinceCheckpoint");
+    }
+
+    void createTable() {
+        // TODO
+        // Create table with exponential backoff until tableExists is true. Only one writer has to
+        // successfully create the table. DOCUMENT!!
     }
 
     static class AppendInfo {

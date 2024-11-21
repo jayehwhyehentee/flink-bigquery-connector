@@ -77,9 +77,7 @@ public class BigQueryDefaultWriter<IN> extends BaseWriter<IN> {
      */
     @Override
     public void write(IN element, Context context) {
-        totalRecordsSeen++;
-        numberOfRecordsSeenByWriter.inc();
-        numberOfRecordsSeenByWriterSinceCheckpoint.inc();
+        super.write(element, context);
         try {
             ByteString protoRow = getProtoRow(element);
             if (!fitsInAppendRequest(protoRow)) {
@@ -92,7 +90,11 @@ public class BigQueryDefaultWriter<IN> extends BaseWriter<IN> {
         }
     }
 
-    /** Overwriting flush() method for updating Flink Metrics in at-least-once Approach. */
+    /**
+     * Overwriting flush() method for updating Flink Metrics in at-least-once Approach.
+     *
+     * @param endOfInput
+     */
     @Override
     public void flush(boolean endOfInput) {
         super.flush(endOfInput);
