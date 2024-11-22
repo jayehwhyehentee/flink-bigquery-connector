@@ -35,6 +35,7 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.DynamicMessage;
+import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +71,12 @@ public class RowDataToProtoSerializer extends BigQueryProtoSerializer<RowData> {
         Preconditions.checkNotNull(
                 derivedDescriptor, "Destination BigQuery table's Proto Schema could not be found.");
         this.descriptor = derivedDescriptor;
+    }
+
+    @Override
+    public Schema getAvroSchema(RowData record) {
+        // TODO
+        throw new UnsupportedOperationException("RowData to Avro Schema is not supported yet");
     }
 
     public void setLogicalType(LogicalType type) {

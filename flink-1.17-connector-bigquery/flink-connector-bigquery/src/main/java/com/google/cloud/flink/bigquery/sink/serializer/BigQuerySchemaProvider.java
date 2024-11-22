@@ -50,4 +50,12 @@ public interface BigQuerySchemaProvider extends Serializable {
      * @return AvroSchema
      */
     Schema getAvroSchema();
+
+    /**
+     * Returns true is BigQuery table's schema is unknown, else false. Schema can be unknown due to
+     * reasons like table does not exist.
+     *
+     * @return boolean
+     */
+    boolean schemaUnknown();
 }
