@@ -135,14 +135,17 @@ If only the jars are needed, then execute maven `package` instead of `install`.
 
 ### Connector to Flink Compatibility
 
-| Connector tag \ Flink version | 1.15.x | 1.17.x |
-|-------------------------------|--------|--------|
-| 0.1.0-preview                 | ✓      | ✓      |
-| 0.2.0-preview                 | ✓      | ✓      |
-| 0.2.0                         | ✓      | ✓      |
-| 0.3.0                         | ✓      | ✓      |
-| 0.4.0                         | ✓      | ✓      |
-| 0.5.0                         | ✓      | ✓      |
+| Connector tag \ Flink version | 1.15.x | 1.17.x | 1.18.x | 1.19.x |
+|-------------------------------|--------|--------|--------|--------|
+| 0.1.0-preview                 | ✓      | ✓      | ✓      | ✓      |
+| 0.2.0-preview                 | ✓      | ✓      | ✓      | ✓      |
+| 0.2.0                         | ✓      | ✓      | ✓      | ✓      |
+| 0.3.0                         | ✓      | ✓      | ✓      | ✓      |
+| 0.4.0                         | ✓      | ✓      | ✓      | ✓      |
+| 0.5.0                         | ✓      | ✓      | ✓      | ✓      |
+
+Note that this connector is built on Flink 1.17 libraries. In order to run it in other Flink runtimes, you have to 
+exclude the entire flink module, i.e. `group = "org.apache.flink"`, when importing the connector as a dependency.
 
 ### Create a Google Cloud Dataproc cluster (Optional)
 
@@ -549,6 +552,15 @@ and at `com.google.cloud.flink.bigquery.examples.BigQueryTableExample` for the T
 It offers an intuitive hands-on application with elaborate guidance to test out the connector and 
 its various configurations.
 
+
+## Unsupported Features
+
+The connector currently does not offer the following features:
+
+* Unbounded source
+* Update or delete in sink
+* Explicit connector artifact for non 1.17 Flink versions
+* Dead letter queue
 
 ## FAQ
 
