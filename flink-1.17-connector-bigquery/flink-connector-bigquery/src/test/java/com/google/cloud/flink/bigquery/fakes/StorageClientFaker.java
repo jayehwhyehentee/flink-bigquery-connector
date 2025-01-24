@@ -752,8 +752,6 @@ public class StorageClientFaker {
         return BigQueryReadOptions.builder()
                 .setSnapshotTimestampInMillis(Instant.now().toEpochMilli())
                 .setLimit(readLimit)
-                .setQuery("SELECT 1")
-                .setQueryExecutionProject("some-gcp-project")
                 .setBigQueryConnectOptions(
                         BigQueryConnectOptions.builder()
                                 .setDataset("dataset")
@@ -804,8 +802,6 @@ public class StorageClientFaker {
         return BigQueryReadOptions.builder()
                 .setSnapshotTimestampInMillis(Instant.now().toEpochMilli())
                 .setLimit(readLimit)
-                .setQuery("SELECT 1")
-                .setQueryExecutionProject("some-gcp-project")
                 .setBigQueryConnectOptions(
                         BigQueryConnectOptions.builder()
                                 .setDataset("dataset")
@@ -850,8 +846,6 @@ public class StorageClientFaker {
         return BigQueryReadOptions.builder()
                 .setSnapshotTimestampInMillis(Instant.now().toEpochMilli())
                 .setLimit(readLimit)
-                .setQuery("SELECT 1")
-                .setQueryExecutionProject("some-gcp-project")
                 .setBigQueryConnectOptions(
                         BigQueryConnectOptions.builder()
                                 .setDataset("dataset")
